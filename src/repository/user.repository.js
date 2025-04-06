@@ -3,10 +3,9 @@ const bcrypt = require("bcrypt");
 
 exports.createUser = async ({ email, password, name }) => {
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
     const result = await db.query(
       "INSERT INTO users (email, password, name, balance) VALUES ($1, $2, $3, $4) RETURNING *",
-      [email, hashedPassword, name, 0]
+      [email, password, name, 0]
     );
     return result.rows[0];
   } catch (error) {
@@ -68,5 +67,34 @@ exports.deleteUser = async (id) => {
     return deletedUser;
   } catch (error) {
     console.error("Error deleting user", error);
+  }
+};
+
+exports.getUserById = async (id) => {
+  try {
+    const result = await db.query("SELECT * FROM users WHERE id = $1", [id]);
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error("Error getting user by ID:", error);
+    return null;
+  }
+};
+
+exports.updateBalance = async (id, amount) => {
+  const query =
+    "UPDATE users SET balance = balance + $1 WHERE id = $2 RETURNING *";
+  const result = await db.query(query, [amount, id]);
+  return result.rows[0];
+};
+
+exports.decreaseUserBalance = async (id, balance) => {
+  try {
+    await db.query("UPDATE users SET balance = balance - $1 WHERE id = $2", [
+      balance,
+      id,
+    ]);
+  } catch (error) {
+    console.error("Error decreasing user balance", error);
+    throw error;
   }
 };

@@ -1,24 +1,19 @@
 const db = require("../database/pg.database");
 
 exports.createItem = async (item) => {
-  try {
-    const checkStore = await db.query("SELECT * FROM stores WHERE id = $1", [
-      item.store_id,
-    ]);
-    if (checkStore.rows.length === 0) {
-      throw new Error("Store doesn't exist");
-    }
+  const checkStore = await db.query("SELECT * FROM stores WHERE id = $1", [
+    item.store_id,
+  ]);
 
-    const result = await db.query(
-      "INSERT INTO items (name, price, store_id, image_url, stock) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [item.name, item.price, item.store_id, item.image_url, item.stock]
-    );
-
-    return result.rows[0];
-  } catch (error) {
-    console.error("Error creating item", error);
-    throw error;
+  if (checkStore.rows.length === 0) {
+    throw new Error("Store doesn't exist");
   }
+
+  const result = await db.query(
+    "INSERT INTO items (name, price, store_id, image_url, stock) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+    [item.name, item.price, item.store_id, item.image_url, item.stock]
+  );
+  return result.rows[0];
 };
 
 exports.getAllItems = async () => {
@@ -33,7 +28,7 @@ exports.getAllItems = async () => {
 exports.getItemById = async (id) => {
   try {
     const stores = await db.query("SELECT * FROM items WHERE id = $1", [id]);
-    return stores.rows;
+    return stores.rows[0];
   } catch (error) {
     console.error("Error getting stores", error);
   }
@@ -60,6 +55,24 @@ exports.updateItem = async (id, item) => {
     return result.rows[0];
   } catch (error) {
     console.error("Error updating item", error);
+    throw error;
+  }
+};
+
+exports.updateStock = async (id, newStock) => {
+  const query = `UPDATE items SET stock = $1 WHERE id = $2 RETURNING *`;
+  const result = await pool.query(query, [newStock, id]);
+  return result.rows[0];
+};
+
+exports.decreaseItemStock = async (id, quantity) => {
+  try {
+    await db.query("UPDATE items SET stock = stock - $1 WHERE id = $2", [
+      quantity,
+      id,
+    ]);
+  } catch (error) {
+    console.error("Error decreasing item stock", error);
     throw error;
   }
 };

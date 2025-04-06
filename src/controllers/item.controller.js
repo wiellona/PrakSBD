@@ -66,7 +66,7 @@ exports.getItemById = async (req, res) => {
     if (!item || item.length === 0) {
       return baseResponses(res, false, 404, "Item not found", null);
     }
-    baseResponses(res, true, 200, "Item found", item[0]);
+    baseResponses(res, true, 200, "Item found", item);
   } catch (error) {
     baseResponses(res, false, 500, error.message || "Server error", null);
   }
